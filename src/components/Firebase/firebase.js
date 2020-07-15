@@ -40,14 +40,11 @@ class Firebase {
   doSignInWithEmailAndPassword = (email, password) =>
     this.auth.signInWithEmailAndPassword(email, password);
 
-  doSignInWithGoogle = () =>
-    this.auth.signInWithPopup(this.googleProvider);
+  doSignInWithGoogle = () => this.auth.signInWithPopup(this.googleProvider);
 
-  doSignInWithFacebook = () =>
-    this.auth.signInWithPopup(this.facebookProvider);
+  doSignInWithFacebook = () => this.auth.signInWithPopup(this.facebookProvider);
 
-  doSignInWithTwitter = () =>
-    this.auth.signInWithPopup(this.twitterProvider);
+  doSignInWithTwitter = () => this.auth.signInWithPopup(this.twitterProvider);
 
   doSignOut = () => this.auth.signOut();
 
@@ -64,29 +61,26 @@ class Firebase {
   // *** Merge Auth and DB User API *** //
 
   onAuthUserListener = (next, fallback) =>
-    this.auth.onAuthStateChanged((authUser) => {
+    this.auth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
-        this.user(authUser.uid)
-          .get()
-          .then((snapshot) => {
-            const dbUser = snapshot.data();
+        const snapshot = await this.user(authUser.uid).get();
+        const dbUser = snapshot.data();
 
-            // default empty roles
-            if (!dbUser.roles) {
-              dbUser.roles = {};
-            }
+        // default empty roles
+        if (!dbUser.roles) {
+          dbUser.roles = {};
+        }
 
-            // merge auth and db user
-            authUser = {
-              uid: authUser.uid,
-              email: authUser.email,
-              emailVerified: authUser.emailVerified,
-              providerData: authUser.providerData,
-              ...dbUser,
-            };
+        // merge auth and db user
+        authUser = {
+          uid: authUser.uid,
+          email: authUser.email,
+          emailVerified: authUser.emailVerified,
+          providerData: authUser.providerData,
+          ...dbUser,
+        };
 
-            next(authUser);
-          });
+        next(authUser);
       } else {
         fallback();
       }

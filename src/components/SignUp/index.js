@@ -1,7 +1,8 @@
-import React, { Component } from "react";
-import { Link, withRouter } from "react-router-dom";
+import React from "react";
+//import set from "lodash/set";
+import { Link, useHistory } from "react-router-dom";
 
-import { withFirebase } from "../Firebase";
+import { FirebaseProvider } from "../Firebase";
 import * as ROUTES from "../../constants/routes";
 import * as ROLES from "../../constants/roles";
 
@@ -12,14 +13,14 @@ const SignUpPage = () => (
   </div>
 );
 
-const INITIAL_STATE = {
-  username: "",
-  email: "",
-  passwordOne: "",
-  passwordTwo: "",
-  isAdmin: false,
-  error: null,
-};
+// const INITIAL_STATE = {
+//   username: "",
+//   email: "",
+//   passwordOne: "",
+//   passwordTwo: "",
+//   isAdmin: false,
+//   error: null,
+// };
 
 const ERROR_CODE_ACCOUNT_EXISTS = "auth/email-already-in-use";
 
@@ -31,131 +32,133 @@ const ERROR_MSG_ACCOUNT_EXISTS = `
   on your personal account page.
 `;
 
-class SignUpFormBase extends Component {
-  constructor(props) {
-    super(props);
+const SignUpForm = () => {
+  const [username, setUsername] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [passwordOne, setPasswordOne] = React.useState("");
+  const [passwordTwo, setPasswordTwo] = React.useState("");
+  const [isAdmin, setIsAdmin] = React.useState(false);
+  const [error, setError] = React.useState();
 
-    this.state = { ...INITIAL_STATE };
-  }
+  const {
+    doCreateUserWithEmailAndPassword,
+    doSendEmailVerification,
+    userDb,
+  } = React.useContext(FirebaseProvider.context);
+  const history = useHistory();
 
-  onFormSubmit = (event) => {
+  const onFormSubmit = async (event) => {
     event.preventDefault();
-    const { username, email, passwordOne, isAdmin } = this.state;
-    const roles = {};
-
-    if (isAdmin) {
-      roles[ROLES.ADMIN] = ROLES.ADMIN;
-    }
-
-    this.props.firebase
-      .doCreateUserWithEmailAndPassword(email, passwordOne)
-      .then((authUser) => {
-        // Create a user in your Firebase realtime database
-        return this.props.firebase.user(authUser.user.uid).set(
+    const roles = isAdmin ? Object.assign({}, [ROLES.ADMIN]) : {};
+    try {
+      const createAuthUser = await doCreateUserWithEmailAndPassword(
+        email,
+        passwordOne
+      );
+      if (createAuthUser) {
+        await userDb(createAuthUser.user.uid).set(
           {
             username,
             email,
             roles,
           },
-          { merge: true },
+          { merge: true }
         );
-      })
-      .then(() => {
-        return this.props.firebase.doSendEmailVerification();
-      })
-      .then(() => {
-        this.setState({ ...INITIAL_STATE });
-        this.props.history.push(ROUTES.HOME);
-      })
-      .catch((error) => {
-        if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
-          error.message = ERROR_MSG_ACCOUNT_EXISTS;
-        }
+        await doSendEmailVerification();
+        history.push(ROUTES.HOME);
+      }
+    } catch (error) {
+      if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+        error.message = ERROR_MSG_ACCOUNT_EXISTS;
+      }
 
-        this.setState({ error });
-      });
+      setError(error);
+    }
   };
 
-  onChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
+  // const onChange = (event) => {
+  //   console.log(stateObj);
+  //   set(
+  //     stateObj,
+  //     event.target.name,
+  //     stateObj[event.target.nam] + event.target.value
+  //   );
+  //   setStateObj(stateObj);
+  //   console.log(stateObj);
+  // };
 
-  onChangeCheckbox = (event) => {
-    this.setState({ [event.target.name]: event.target.checked });
-  };
+  // const onChangeCheckbox = (event) => {
+  //   setStateObj({ [event.target.name]: event.target.checked, ...stateObj });
+  // };
 
-  render() {
-    const {
-      username,
-      email,
-      passwordOne,
-      passwordTwo,
-      isAdmin,
-      error,
-    } = this.state;
+  // const {
+  //   username,
+  //   email,
+  //   passwordOne,
+  //   passwordTwo,
+  //   isAdmin,
+  //   error,
+  // } = stateObj;
 
-    const isInvalid =
-      passwordOne !== passwordTwo ||
-      passwordOne === "" ||
-      email === "" ||
-      username === "";
+  const isInvalid =
+    passwordOne !== passwordTwo ||
+    passwordOne === "" ||
+    email === "" ||
+    username === "";
 
-    return (
-      <form onSubmit={this.onFormSubmit}>
+  return (
+    <form onSubmit={onFormSubmit}>
+      <input
+        name="username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        type="text"
+        placeholder="Full Name"
+      />
+      <input
+        name="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="Email Address"
+      />
+      <input
+        name="passwordOne"
+        value={passwordOne}
+        onChange={(e) => setPasswordOne(e.target.value)}
+        type="password"
+        placeholder="Password"
+      />
+      <input
+        name="passwordTwo"
+        value={passwordTwo}
+        onChange={(e) => setPasswordTwo(e.target.value)}
+        type="password"
+        placeholder="Confirm Password"
+      />
+      <label>
+        Admin:
         <input
-          name="username"
-          value={username}
-          onChange={this.onChange}
-          type="text"
-          placeholder="Full Name"
+          name="isAdmin"
+          type="checkbox"
+          checked={isAdmin}
+          onChange={(e) => setIsAdmin(e.target.checked)}
         />
-        <input
-          name="email"
-          value={email}
-          onChange={this.onChange}
-          type="text"
-          placeholder="Email Address"
-        />
-        <input
-          name="passwordOne"
-          value={passwordOne}
-          onChange={this.onChange}
-          type="password"
-          placeholder="Password"
-        />
-        <input
-          name="passwordTwo"
-          value={passwordTwo}
-          onChange={this.onChange}
-          type="password"
-          placeholder="Confirm Password"
-        />
-        <label>
-          Admin:
-          <input
-            name="isAdmin"
-            type="checkbox"
-            checked={isAdmin}
-            onChange={this.onChangeCheckbox}
-          />
-        </label>
-        <button disabled={isInvalid} type="submit">
-          Sign Up
-        </button>
+      </label>
+      <button disabled={isInvalid} type="submit">
+        Sign Up
+      </button>
 
-        {error && <p>{error.message}</p>}
-      </form>
-    );
-  }
-}
+      {error && <p>{error.message}</p>}
+    </form>
+  );
+};
 
 const SignUpLink = () => (
   <p>
     Don't have an account? <Link to={ROUTES.SIGN_UP}>Sign Up</Link>
   </p>
 );
-
-const SignUpForm = withRouter(withFirebase(SignUpFormBase));
 
 export default SignUpPage;
 

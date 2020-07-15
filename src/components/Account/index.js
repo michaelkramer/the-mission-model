@@ -1,14 +1,11 @@
-import React, { Component } from "react";
-import { compose } from "recompose";
+import React, { useEffect } from "react";
 
-import {
-  AuthUserContext,
-  withAuthorization,
-  withEmailVerification,
-} from "../Session";
-import { withFirebase } from "../Firebase";
+import { AuthUserProvider, withEmailVerification } from "../Session";
+import { FirebaseProvider } from "../Firebase";
 import { PasswordForgetForm } from "../PasswordForget";
 import PasswordChangeForm from "../PasswordChange";
+import { useHistory } from "react-router-dom";
+import * as ROUTES from "../../constants/routes";
 
 const SIGN_IN_METHODS = [
   {
@@ -29,109 +26,123 @@ const SIGN_IN_METHODS = [
   },
 ];
 
-const AccountPage = () => (
-  <AuthUserContext.Consumer>
-    {(authUser) => (
-      <div>
-        <h1>Account: {authUser.email}</h1>
-        <PasswordForgetForm />
-        <PasswordChangeForm />
-        <LoginManagement authUser={authUser} />
-      </div>
-    )}
-  </AuthUserContext.Consumer>
-);
+const condition = (authUser) => !!authUser;
 
-class LoginManagementBase extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      activeSignInMethods: [],
-      error: null,
-    };
+const AccountPage = () => {
+  const { authUser } = React.useContext(FirebaseProvider.context);
+  const { authorization } = React.useContext(AuthUserProvider.context);
+  const history = useHistory();
+  if (!authorization(condition)) {
+    history.push(ROUTES.SIGN_IN);
+    return null;
   }
 
-  componentDidMount() {
-    this.fetchSignInMethods();
-  }
+  return (
+    <React.Fragment>
+      {authUser ? (
+        <div>
+          <h1>Account: {authUser.email}</h1>
+          <PasswordForgetForm />
+          <PasswordChangeForm />
+          <LoginManagement authUser={authUser} />
+        </div>
+      ) : (
+        <div>Not Logged in</div>
+      )}
+    </React.Fragment>
+  );
+};
 
-  fetchSignInMethods = () => {
-    this.props.firebase.auth
-      .fetchSignInMethodsForEmail(this.props.authUser.email)
-      .then((activeSignInMethods) =>
-        this.setState({ activeSignInMethods, error: null }),
-      )
-      .catch((error) => this.setState({ error }));
+const LoginManagement = (authUser) => {
+  const { firebaseAuth, firebaseApp } = React.useContext(
+    FirebaseProvider.context
+  );
+  const [activeSignInMethods, setActiveSignInMethods] = React.useState();
+  const [error, setError] = React.useState();
+
+  const fetchSignInMethods = async () => {
+    if (authUser && authUser.email) {
+      try {
+        const activeSignInMethods = await firebaseAuth.fetchSignInMethodsForEmail(
+          authUser.email
+        );
+        setActiveSignInMethods(activeSignInMethods);
+      } catch (error) {
+        setError(error);
+      }
+    }
   };
 
-  onSocialLoginLink = (provider) => {
-    this.props.firebase.auth.currentUser
-      .linkWithPopup(this.props.firebase[provider])
-      .then(this.fetchSignInMethods)
-      .catch((error) => this.setState({ error }));
+  const onSocialLoginLink = (provider) => {
+    firebaseAuth.currentUser
+      .linkWithPopup(firebaseApp[provider])
+      .then(fetchSignInMethods)
+      .catch((error) => setError(error));
   };
 
-  onDefaultLoginLink = (password) => {
-    const credential = this.props.firebase.emailAuthProvider.credential(
-      this.props.authUser.email,
-      password,
+  const onDefaultLoginLink = (password) => {
+    const credential = firebaseApp.emailAuthProvider.credential(
+      authUser.email,
+      password
     );
 
-    this.props.firebase.auth.currentUser
+    firebaseAuth.currentUser
       .linkAndRetrieveDataWithCredential(credential)
-      .then(this.fetchSignInMethods)
-      .catch((error) => this.setState({ error }));
+      .then(fetchSignInMethods)
+      .catch((error) => setError(error));
   };
 
-  onUnlink = (providerId) => {
-    this.props.firebase.auth.currentUser
+  const onUnlink = (providerId) => {
+    firebaseAuth.currentUser
       .unlink(providerId)
-      .then(this.fetchSignInMethods)
-      .catch((error) => this.setState({ error }));
+      .then(fetchSignInMethods)
+      .catch((error) => setError(error));
   };
 
-  render() {
-    const { activeSignInMethods, error } = this.state;
+  useEffect(() => {
+    let isSubscribed = true;
+    isSubscribed && fetchSignInMethods();
+    return () => (isSubscribed = false);
+  });
 
-    return (
-      <div>
-        Sign In Methods:
-        <ul>
-          {SIGN_IN_METHODS.map((signInMethod) => {
-            const onlyOneLeft = activeSignInMethods.length === 1;
-            const isEnabled = activeSignInMethods.includes(
-              signInMethod.id,
-            );
+  return (
+    <div>
+      Sign In Methods:
+      <ul>
+        {SIGN_IN_METHODS.map((signInMethod) => {
+          const onlyOneLeft =
+            activeSignInMethods && activeSignInMethods.length === 1;
+          const isEnabled =
+            activeSignInMethods &&
+            activeSignInMethods.includes(signInMethod.id);
 
-            return (
-              <li key={signInMethod.id}>
-                {signInMethod.id === "password" ? (
-                  <DefaultLoginToggle
-                    onlyOneLeft={onlyOneLeft}
-                    isEnabled={isEnabled}
-                    signInMethod={signInMethod}
-                    onLink={this.onDefaultLoginLink}
-                    onUnlink={this.onUnlink}
-                  />
-                ) : (
-                  <SocialLoginToggle
-                    onlyOneLeft={onlyOneLeft}
-                    isEnabled={isEnabled}
-                    signInMethod={signInMethod}
-                    onLink={this.onSocialLoginLink}
-                    onUnlink={this.onUnlink}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        {error && error.message}
-      </div>
-    );
-  }
-}
+          return (
+            <li key={signInMethod.id}>
+              {signInMethod.id === "password" ? (
+                <DefaultLoginToggle
+                  onlyOneLeft={onlyOneLeft}
+                  isEnabled={isEnabled}
+                  signInMethod={signInMethod}
+                  onLink={onDefaultLoginLink}
+                  onUnlink={onUnlink}
+                />
+              ) : (
+                <SocialLoginToggle
+                  onlyOneLeft={onlyOneLeft}
+                  isEnabled={isEnabled}
+                  signInMethod={signInMethod}
+                  onLink={onSocialLoginLink}
+                  onUnlink={onUnlink}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {error && error.message}
+    </div>
+  );
+};
 
 const SocialLoginToggle = ({
   onlyOneLeft,
@@ -149,83 +160,61 @@ const SocialLoginToggle = ({
       Deactivate {signInMethod.id}
     </button>
   ) : (
-    <button
-      type="button"
-      onClick={() => onLink(signInMethod.provider)}
-    >
+    <button type="button" onClick={() => onLink(signInMethod.provider)}>
       Link {signInMethod.id}
     </button>
   );
 
-class DefaultLoginToggle extends Component {
-  constructor(props) {
-    super(props);
+const DefaultLoginToggle = ({
+  onlyOneLeft,
+  isEnabled,
+  signInMethod,
+  onLink,
+  onUnlink,
+}) => {
+  const [passwordOne, setPasswordOne] = React.useState("");
+  const [passwordTwo, setPasswordTwo] = React.useState("");
 
-    this.state = { passwordOne: "", passwordTwo: "" };
-  }
-
-  onSubmit = (event) => {
+  const onSubmit = (event) => {
     event.preventDefault();
 
-    this.props.onLink(this.state.passwordOne);
-    this.setState({ passwordOne: "", passwordTwo: "" });
+    onLink(passwordOne);
+    setPasswordOne("");
+    setPasswordTwo("");
   };
 
-  onChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
+  const isInvalid = passwordOne !== passwordTwo || passwordOne === "";
 
-  render() {
-    const {
-      onlyOneLeft,
-      isEnabled,
-      signInMethod,
-      onUnlink,
-    } = this.props;
+  return isEnabled ? (
+    <button
+      type="button"
+      onClick={() => onUnlink(signInMethod.id)}
+      disabled={onlyOneLeft}
+    >
+      Deactivate {signInMethod.id}
+    </button>
+  ) : (
+    <form onSubmit={onSubmit}>
+      <input
+        name="passwordOne"
+        value={passwordOne}
+        onChange={(e) => setPasswordOne(e.target.value)}
+        type="password"
+        placeholder="New Password"
+      />
+      <input
+        name="passwordTwo"
+        value={passwordTwo}
+        onChange={(e) => setPasswordTwo(e.target.value)}
+        type="password"
+        placeholder="Confirm New Password"
+      />
 
-    const { passwordOne, passwordTwo } = this.state;
-
-    const isInvalid =
-      passwordOne !== passwordTwo || passwordOne === "";
-
-    return isEnabled ? (
-      <button
-        type="button"
-        onClick={() => onUnlink(signInMethod.id)}
-        disabled={onlyOneLeft}
-      >
-        Deactivate {signInMethod.id}
+      <button disabled={isInvalid} type="submit">
+        Link {signInMethod.id}
       </button>
-    ) : (
-      <form onSubmit={this.onSubmit}>
-        <input
-          name="passwordOne"
-          value={passwordOne}
-          onChange={this.onChange}
-          type="password"
-          placeholder="New Password"
-        />
-        <input
-          name="passwordTwo"
-          value={passwordTwo}
-          onChange={this.onChange}
-          type="password"
-          placeholder="Confirm New Password"
-        />
+    </form>
+  );
+};
 
-        <button disabled={isInvalid} type="submit">
-          Link {signInMethod.id}
-        </button>
-      </form>
-    );
-  }
-}
-
-const LoginManagement = withFirebase(LoginManagementBase);
-
-const condition = (authUser) => !!authUser;
-
-export default compose(
-  withEmailVerification,
-  withAuthorization(condition),
-)(AccountPage);
+export default withEmailVerification(AccountPage);

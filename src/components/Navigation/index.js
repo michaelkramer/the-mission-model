@@ -1,18 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { AuthUserContext } from "../Session";
+import { FirebaseProvider } from "../Firebase";
 import SignOutButton from "../SignOut";
- 
+
 import * as ROUTES from "../../constants/routes";
- 
-const Navigation = ({ authUser }) => (
-  <div>
-  <AuthUserContext.Consumer>
-      {(authUser) =>
-        authUser ? <NavigationAuth /> : <NavigationNonAuth />
-      }
-    </AuthUserContext.Consumer></div>
-);
+
+const Navigation = () => {
+  const { authUser } = React.useContext(FirebaseProvider.context);
+  return <div>{authUser ? <NavigationAuth /> : <NavigationNonAuth />}</div>;
+};
 
 const NavigationAuth = () => (
   <ul>
@@ -33,7 +29,7 @@ const NavigationAuth = () => (
     </li>
   </ul>
 );
- 
+
 const NavigationNonAuth = () => (
   <ul>
     <li>
@@ -44,5 +40,5 @@ const NavigationNonAuth = () => (
     </li>
   </ul>
 );
- 
+
 export default Navigation;

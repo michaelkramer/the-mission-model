@@ -2,27 +2,46 @@
   "name": "the-mission-model",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.3.2",
-    "@testing-library/user-event": "^7.1.2",
-    "firebase": "^7.16.0",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.1",
-    "recompose": "^0.30.0"
-  },
   "scripts": {
-    "reactstart": "react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint ./src/** --format stylish",
-    "start": "webpack-dev-server --open"
+    "lint": "eslint ./src/** --format stylish"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": [
+      "react-app",
+      "react-hooks/recommended"
+    ],
+    "rules": {
+      "no-console": 1,
+      "arrow-parens": "error",
+      "eqeqeq": [
+        "error",
+        "always"
+      ],
+      "no-unused-vars": [
+        0,
+        {
+          "argsIgnorePattern": "^_",
+          "ignoreRestSiblings": true
+        }
+      ],
+      "react/prop-types": [
+        0
+      ],
+      "react/display-name": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "quotes": [
+        "error",
+        "double",
+        {
+          "avoidEscape": true,
+          "allowTemplateLiterals": true
+        }
+      ]
+    }
   },
   "browserslist": {
     "production": [
@@ -36,18 +55,38 @@
       "last 1 safari version"
     ]
   },
+  "dependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "firebase": "^7.16.0",
+    "lodash": "^4.17.19",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "3.4.1",
+    "recompose": "^0.30.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.10.4",
     "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-react": "^7.10.4",
-    "babel-eslint": "^10.1.0",
+    "@typescript-eslint/eslint-plugin": "2.x",
+    "@typescript-eslint/parser": "2.x",
+    "babel-eslint": "10.x",
     "babel-loader": "^8.1.0",
     "css-loader": "^3.6.0",
-    "eslint": "6.6.0",
-    "eslint-plugin-react": "^7.20.3",
+    "eslint": "6.x",
+    "eslint-config-react-app": "^5.2.1",
+    "eslint-plugin-flowtype": "4.x",
+    "eslint-plugin-import": "2.x",
+    "eslint-plugin-jsx-a11y": "6.x",
+    "eslint-plugin-react": "7.x",
+    "eslint-plugin-react-hooks": "2.x",
     "favicons-webpack-plugin": "^3.0.1",
     "html-webpack-plugin": "^4.3.0",
+    "prettier": "^2.0.5",
     "style-loader": "^1.2.1",
     "webpack": "4.42.0",
     "webpack-cli": "^3.3.12",
