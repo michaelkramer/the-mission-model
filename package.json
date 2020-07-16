@@ -1,7 +1,20 @@
 {
   "name": "the-mission-model",
   "version": "0.1.0",
+  "description": "A Description",
   "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Michael Kramer",
+    "email": "michaelrkramer@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaelkramer/the-mission-model.git"
+  },
+  "engines": {
+    "node": "10.20.1"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
