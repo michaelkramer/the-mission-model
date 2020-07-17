@@ -10,7 +10,7 @@ import { Theme } from "./components/Style";
 import "./index.less";
 
 const antConfig = {
-  prefixCls: "tmm",
+  //prefixCls: "tmm",
 };
 
 ReactDOM.render(

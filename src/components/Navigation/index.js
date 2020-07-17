@@ -1,21 +1,23 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Menu, Button } from "antd";
+import { Link, useHistory } from "react-router-dom";
+import { Menu } from "antd";
 
 import { FirebaseProvider } from "../Firebase";
-//import SignOutButton from "../SignOut";
 
 import * as ROUTES from "../../constants/routes";
 
 const Navigation = () => {
   const { authUser, doSignOut } = React.useContext(FirebaseProvider.context);
-
+  const history = useHistory();
   const authNav = [
     { url: ROUTES.LANDING, title: "Landing", icon: "" },
     { url: ROUTES.HOME, title: "Home" },
     { url: ROUTES.ACCOUNT, title: "Account" },
     { url: ROUTES.ADMIN, title: "Admin" },
-    { title: "Sign Out", onClick: doSignOut },
+    {
+      title: "Sign Out",
+      onClick: () => doSignOut().then(() => history.push(ROUTES.SIGN_IN)),
+    },
   ];
 
   const nonAuthNav = [

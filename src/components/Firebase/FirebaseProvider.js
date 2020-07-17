@@ -26,7 +26,6 @@ const context = React.createContext(null);
 
 const FirebaseProvider = ({ children }) => {
   const [authUser, setAuthUser] = useState(auth.currentUser);
-
   // *** User API ***
   const userDb = (uid) => {
     return db.doc(`users/${uid}`);
@@ -54,6 +53,7 @@ const FirebaseProvider = ({ children }) => {
         };
         setAuthUser(authUser);
       } else {
+        // eslint-disable-next-line
         console.log("nothing");
       }
     });

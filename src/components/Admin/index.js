@@ -3,6 +3,10 @@ import { Switch, Route, Link, useHistory } from "react-router-dom";
 import { Table } from "antd";
 import { FirebaseProvider } from "../Firebase";
 import { AuthUserProvider, withEmailVerification } from "../Session";
+
+import UserList from "./UserList";
+import UserDetail from "./UserDetail";
+
 import * as ROLES from "../../constants/roles";
 import * as ROUTES from "../../constants/routes";
 
@@ -25,7 +29,7 @@ const AdminPage = () => {
       <p>The Admin Page is accessible by every signed in admin user.</p>
       {authUser ? (
         <Switch>
-          <Route exact path={ROUTES.ADMIN_DETAILS} component={UserItem} />
+          <Route exact path={ROUTES.ADMIN_DETAILS} component={UserDetail} />
           <Route exact path={ROUTES.ADMIN} component={UserList} />
         </Switch>
       ) : (
@@ -35,87 +39,87 @@ const AdminPage = () => {
   );
 };
 
-const UserList = () => {
-  const { usersDb } = React.useContext(FirebaseProvider.context);
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
+// const UserList = () => {
+//   const { usersDb } = React.useContext(FirebaseProvider.context);
+//   const [loading, setLoading] = useState(false);
+//   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
-    let isSubscribed = true;
+//   useEffect(() => {
+//     let isSubscribed = true;
 
-    isSubscribed && setLoading(true);
-    usersDb().onSnapshot((snapshot) => {
-      let users = [];
+//     isSubscribed && setLoading(true);
+//     usersDb().onSnapshot((snapshot) => {
+//       let users = [];
 
-      snapshot.forEach((doc) => users.push({ ...doc.data(), uid: doc.id }));
-      isSubscribed && setUsers(users);
-      isSubscribed && setLoading(false);
-    });
+//       snapshot.forEach((doc) => users.push({ ...doc.data(), uid: doc.id }));
+//       isSubscribed && setUsers(users);
+//       isSubscribed && setLoading(false);
+//     });
 
-    return () => (isSubscribed = false);
-  }, [usersDb]);
+//     return () => (isSubscribed = false);
+//   }, [usersDb]);
 
-  const columns = [
-    {
-      title: "ID",
-      dataIndex: "uid",
-      key: "uid",
-      render: (text, record) => (
-        <Link
-          to={{
-            pathname: `${ROUTES.ADMIN}/${record.uid}`,
-            state: { user: record },
-          }}
-        >
-          {text}
-        </Link>
-      ),
-    },
-    {
-      title: "E-mail",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Username",
-      dataIndex: "username",
-      key: "username",
-    },
-  ];
+//   const columns = [
+//     {
+//       title: "ID",
+//       dataIndex: "uid",
+//       key: "uid",
+//       render: (text, record) => (
+//         <Link
+//           to={{
+//             pathname: `${ROUTES.ADMIN}/${record.uid}`,
+//             state: { user: record },
+//           }}
+//         >
+//           {text}
+//         </Link>
+//       ),
+//     },
+//     {
+//       title: "E-mail",
+//       dataIndex: "email",
+//       key: "email",
+//     },
+//     {
+//       title: "Username",
+//       dataIndex: "username",
+//       key: "username",
+//     },
+//   ];
 
-  return (
-    <div>
-      <h2>Users</h2>
-      {loading && <div>Loading ...</div>}
-      <Table dataSource={users} columns={columns} rowKey="uid" />;
-      <ul>
-        {users.map((user) => (
-          <li key={user.uid}>
-            <span>
-              <strong>ID:</strong> {user.uid}
-            </span>
-            <span>
-              <strong>E-Mail:</strong> {user.email}
-            </span>
-            <span>
-              <strong>Username:</strong> {user.username}
-            </span>
-            <span>
-              <Link
-                to={{
-                  pathname: `${ROUTES.ADMIN}/${user.uid}`,
-                  state: { user },
-                }}
-              >
-                Details
-              </Link>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+//   return (
+//     <div>
+//       <h2>Users</h2>
+//       {loading && <div>Loading ...</div>}
+//       <Table dataSource={users} columns={columns} rowKey="uid" />;
+//       <ul>
+//         {users.map((user) => (
+//           <li key={user.uid}>
+//             <span>
+//               <strong>ID:</strong> {user.uid}
+//             </span>
+//             <span>
+//               <strong>E-Mail:</strong> {user.email}
+//             </span>
+//             <span>
+//               <strong>Username:</strong> {user.username}
+//             </span>
+//             <span>
+//               <Link
+//                 to={{
+//                   pathname: `${ROUTES.ADMIN}/${user.uid}`,
+//                   state: { user },
+//                 }}
+//               >
+//                 Details
+//               </Link>
+//             </span>
+//           </li>
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// };
 
 // class UserListBase extends Component {
 //   constructor(props) {
@@ -183,83 +187,83 @@ const UserList = () => {
 //   }
 // }
 
-const UserItem = (props) => {
-  const { userDb, doPasswordReset } = React.useContext(
-    FirebaseProvider.context
-  );
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState();
+// const UserItem = (props) => {
+//   const { userDb, doPasswordReset } = React.useContext(
+//     FirebaseProvider.context
+//   );
+//   const [loading, setLoading] = useState(false);
+//   const [user, setUser] = useState();
 
-  useEffect(() => {
-    let isSubscribed = true;
-    isSubscribed && setLoading(true);
-    userDb(props.match.params.id).onSnapshot((snapshot) => {
-      isSubscribed && setUser({ uid: snapshot.id, ...snapshot.data() });
-      isSubscribed && setLoading(false);
-    });
-    return () => (isSubscribed = false);
-  }, [userDb, props.match.params.id]);
+//   useEffect(() => {
+//     let isSubscribed = true;
+//     isSubscribed && setLoading(true);
+//     userDb(props.match.params.id).onSnapshot((snapshot) => {
+//       isSubscribed && setUser({ uid: snapshot.id, ...snapshot.data() });
+//       isSubscribed && setLoading(false);
+//     });
+//     return () => (isSubscribed = false);
+//   }, [userDb, props.match.params.id]);
 
-  const onSendPasswordResetEmail = () => {
-    doPasswordReset(user.email);
-  };
+//   const onSendPasswordResetEmail = () => {
+//     doPasswordReset(user.email);
+//   };
 
-  const onSetAsAdmin = () => {
-    //console.log(user);
-    if (user && user.uid) {
-      let rolesArr = Object.values(user.roles);
-      //console.log(user.roles, rolesArr);
-      if (rolesArr.includes(ROLES.ADMIN)) {
-        rolesArr = rolesArr.filter((role) => role !== ROLES.ADMIN);
-      } else {
-        rolesArr.push(ROLES.ADMIN);
-      }
-      //console.log(Object.assign({}, rolesArr));
-      const roles = Object.assign({}, rolesArr);
-      //   // Create a user in your Firebase realtime database
-      return userDb(user.uid).set(
-        {
-          roles,
-        },
-        { merge: true }
-      );
-    }
-  };
+//   const onSetAsAdmin = () => {
+//     //console.log(user);
+//     if (user && user.uid) {
+//       let rolesArr = Object.values(user.roles);
+//       //console.log(user.roles, rolesArr);
+//       if (rolesArr.includes(ROLES.ADMIN)) {
+//         rolesArr = rolesArr.filter((role) => role !== ROLES.ADMIN);
+//       } else {
+//         rolesArr.push(ROLES.ADMIN);
+//       }
+//       //console.log(Object.assign({}, rolesArr));
+//       const roles = Object.assign({}, rolesArr);
+//       //   // Create a user in your Firebase realtime database
+//       return userDb(user.uid).set(
+//         {
+//           roles,
+//         },
+//         { merge: true }
+//       );
+//     }
+//   };
 
-  return (
-    <div>
-      <h2>User ({props.match.params.id})</h2>
-      {loading && <div>Loading ...</div>}
+//   return (
+//     <div>
+//       <h2>User ({props.match.params.id})</h2>
+//       {loading && <div>Loading ...</div>}
 
-      {user && (
-        <div>
-          <span>
-            <strong>ID:</strong> {user.uid}
-          </span>
-          <span>
-            <strong>E-Mail:</strong> {user.email}
-          </span>
-          <span>
-            <strong>Username:</strong> {user.username}
-          </span>
-          <span>
-            <strong>roles:</strong> {JSON.stringify(user.roles)}
-          </span>
-          <span>
-            <button type="button" onClick={onSetAsAdmin}>
-              Set as Admin
-            </button>
-          </span>
-          <span>
-            <button type="button" onClick={onSendPasswordResetEmail}>
-              Send Password Reset
-            </button>
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
+//       {user && (
+//         <div>
+//           <span>
+//             <strong>ID:</strong> {user.uid}
+//           </span>
+//           <span>
+//             <strong>E-Mail:</strong> {user.email}
+//           </span>
+//           <span>
+//             <strong>Username:</strong> {user.username}
+//           </span>
+//           <span>
+//             <strong>roles:</strong> {JSON.stringify(user.roles)}
+//           </span>
+//           <span>
+//             <button type="button" onClick={onSetAsAdmin}>
+//               Set as Admin
+//             </button>
+//           </span>
+//           <span>
+//             <button type="button" onClick={onSendPasswordResetEmail}>
+//               Send Password Reset
+//             </button>
+//           </span>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
 
 // class UserItemBase extends Component {
 //   constructor(props) {
