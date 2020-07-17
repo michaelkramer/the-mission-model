@@ -1,13 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import "./index.css";
+import { ThemeProvider } from "react-jss";
 import App from "./components/App";
 import * as serviceWorker from "./serviceWorker";
 import { FirebaseProvider } from "./components/Firebase";
+import { Theme } from "./components/Style";
 
+import "./index.css";
 ReactDOM.render(
   <FirebaseProvider>
-    <App />,
+    <ThemeProvider theme={Theme}>
+      <App />
+    </ThemeProvider>
   </FirebaseProvider>,
   document.getElementById("root")
 );
