@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Switch, Route, Link, useHistory } from "react-router-dom";
-
+import { Table } from "antd";
 import { FirebaseProvider } from "../Firebase";
 import { AuthUserProvider, withEmailVerification } from "../Session";
 import * as ROLES from "../../constants/roles";
@@ -55,10 +55,39 @@ const UserList = () => {
     return () => (isSubscribed = false);
   }, [usersDb]);
 
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "uid",
+      key: "uid",
+      render: (text, record) => (
+        <Link
+          to={{
+            pathname: `${ROUTES.ADMIN}/${record.uid}`,
+            state: { user: record },
+          }}
+        >
+          {text}
+        </Link>
+      ),
+    },
+    {
+      title: "E-mail",
+      dataIndex: "email",
+      key: "email",
+    },
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+    },
+  ];
+
   return (
     <div>
       <h2>Users</h2>
       {loading && <div>Loading ...</div>}
+      <Table dataSource={users} columns={columns} rowKey="uid" />;
       <ul>
         {users.map((user) => (
           <li key={user.uid}>
@@ -176,16 +205,16 @@ const UserItem = (props) => {
   };
 
   const onSetAsAdmin = () => {
-    console.log(user);
+    //console.log(user);
     if (user && user.uid) {
       let rolesArr = Object.values(user.roles);
-      console.log(user.roles, rolesArr);
+      //console.log(user.roles, rolesArr);
       if (rolesArr.includes(ROLES.ADMIN)) {
         rolesArr = rolesArr.filter((role) => role !== ROLES.ADMIN);
       } else {
         rolesArr.push(ROLES.ADMIN);
       }
-      console.log(Object.assign({}, rolesArr));
+      //console.log(Object.assign({}, rolesArr));
       const roles = Object.assign({}, rolesArr);
       //   // Create a user in your Firebase realtime database
       return userDb(user.uid).set(
