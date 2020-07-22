@@ -1,58 +1,95 @@
 import React, { useState } from "react";
-
+import { createUseStyles, useTheme } from "react-jss";
+import { Form, Input, Button, Row, Col, Switch, notification } from "antd";
 import { FirebaseProvider } from "../Firebase";
 
-// const INITIAL_STATE = {
-//   passwordOne: "",
-//   passwordTwo: "",
-//   error: null,
-// };
+const layout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
 
 const PasswordChangeForm = () => {
+  const theme = useTheme();
+  const classes = useStyles({ theme });
+
+  const [form] = Form.useForm();
   const firebase = React.useContext(FirebaseProvider.context);
-  const [passwordOne, setPasswordOne] = useState("");
-  const [passwordTwo, setPasswordTwo] = useState("");
+  const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState();
 
-  const onSubmit = (event) => {
+  const onSubmit = (values) => {
     firebase
-      .doPasswordUpdate(passwordOne)
+      .doPasswordUpdate(values.passwordOne)
       .then(() => {
-        setPasswordOne("");
-        setPasswordTwo("");
+        notification.open({
+          message: "Password Changed",
+        });
       })
       .catch((error) => {
+        notification.open({
+          message: error.message,
+        });
         setError(error);
       });
-
-    event.preventDefault();
   };
 
-  const isInvalid = passwordOne !== passwordTwo || passwordOne === "";
+  const formData = { passwordOne: "", passwordTwo: "" };
 
   return (
-    <form onSubmit={onSubmit}>
-      <input
-        name="passwordOne"
-        value={passwordOne}
-        onChange={(e) => setPasswordOne(e.target.value)}
-        type="password"
-        placeholder="New Password"
-      />
-      <input
-        name="passwordTwo"
-        value={passwordTwo}
-        onChange={(e) => setPasswordTwo(e.target.value)}
-        type="password"
-        placeholder="Confirm New Password"
-      />
-      <button disabled={isInvalid} type="submit">
-        Reset My Password
-      </button>
-
+    <div className={classes.passwordChangeForm}>
+      <Form
+        {...layout}
+        layout="horizontal"
+        form={form}
+        initialValues={formData}
+        onFinish={onSubmit}
+      >
+        <Form.Item name={"passwordOne"} label="New Password" hasFeedback>
+          <Input.Password />
+        </Form.Item>
+        <Form.Item
+          name={"passwordTwo"}
+          label="Confirm New Password"
+          hasFeedback
+          dependencies={["passwordOne"]}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator({ value }) {
+                if (!value || getFieldValue("passwordOne") === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(
+                  "The two passwords that you entered do not match!"
+                );
+              },
+            }),
+          ]}
+        >
+          <Input.Password />
+        </Form.Item>
+        <Form.Item shouldUpdate={true}>
+          {() => (
+            <Button
+              disabled={
+                !form.isFieldsTouched(true) ||
+                form.getFieldsError().filter(({ errors }) => errors.length)
+                  .length
+              }
+              type="primary"
+              htmlType="submit"
+            >
+              Update Password
+            </Button>
+          )}
+        </Form.Item>
+      </Form>
       {error && <p>{error.message}</p>}
-    </form>
+    </div>
   );
 };
+
+const useStyles = createUseStyles((_theme) => ({
+  passwordChangeForm: {},
+}));
 
 export default PasswordChangeForm;

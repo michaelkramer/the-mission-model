@@ -1,30 +1,12 @@
 import React, { useEffect } from "react";
-
+import { Button, notification } from "antd";
 import { AuthUserProvider, withEmailVerification } from "../Session";
 import { FirebaseProvider } from "../Firebase";
 import { PasswordForgetForm } from "../PasswordForget";
 import PasswordChangeForm from "../PasswordChange";
 import { useHistory } from "react-router-dom";
 import * as ROUTES from "../../constants/routes";
-
-const SIGN_IN_METHODS = [
-  {
-    id: "password",
-    provider: null,
-  },
-  {
-    id: "google.com",
-    provider: "googleProvider",
-  },
-  {
-    id: "facebook.com",
-    provider: "facebookProvider",
-  },
-  {
-    id: "twitter.com",
-    provider: "twitterProvider",
-  },
-];
+import { SIGN_IN_METHODS } from "../../constants";
 
 const condition = (authUser) => !!authUser;
 
@@ -152,17 +134,17 @@ const SocialLoginToggle = ({
   onUnlink,
 }) =>
   isEnabled ? (
-    <button
+    <Button
       type="button"
       onClick={() => onUnlink(signInMethod.id)}
       disabled={onlyOneLeft}
     >
       Deactivate {signInMethod.id}
-    </button>
+    </Button>
   ) : (
-    <button type="button" onClick={() => onLink(signInMethod.provider)}>
+    <Button type="button" onClick={() => onLink(signInMethod.provider)}>
       Link {signInMethod.id}
-    </button>
+    </Button>
   );
 
 const DefaultLoginToggle = ({

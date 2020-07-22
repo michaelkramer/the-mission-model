@@ -1,18 +1,24 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-
+import { Form, Input, Button, notification } from "antd";
 import { SignUpLink } from "../SignUp";
 import { PasswordForgetLink } from "../PasswordForget";
 import { FirebaseProvider } from "../Firebase";
 import * as ROUTES from "../../constants/routes";
 
+const layout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
+
 const SignInPage = () => (
   <div>
     <h1>SignIn</h1>
     <SignInForm />
-    <SignInGoogle />
+    <SignInOauthProviders />
+    {/* <SignInGoogle />
     <SignInFacebook />
-    <SignInTwitter />
+    <SignInTwitter /> */}
     <PasswordForgetLink />
     <SignUpLink />
   </div>
@@ -38,12 +44,13 @@ const SignInForm = () => {
   const { doSignInWithEmailAndPassword } = React.useContext(
     FirebaseProvider.context
   );
+  const [form] = Form.useForm();
   const history = useHistory();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState();
 
-  const onSubmit = (event) => {
+  const onSubmit = ({ email, password }) => {
     doSignInWithEmailAndPassword(email, password)
       .then(() => {
         history.push(ROUTES.HOME);
@@ -51,156 +58,144 @@ const SignInForm = () => {
       .catch((error) => {
         setError(error);
       });
-
-    event.preventDefault();
   };
 
   const isInvalid = password === "" || email === "";
   return (
-    <form onSubmit={onSubmit}>
-      <input
-        name="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        type="text"
-        placeholder="Email Address"
-      />
-      <input
-        name="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        type="password"
-        placeholder="Password"
-      />
-      <button disabled={isInvalid} type="submit">
-        Sign In
-      </button>
-
+    <Form
+      {...layout}
+      layout="horizontal"
+      form={form}
+      initialValues={{ email: "", password: "" }}
+      onFinish={onSubmit}
+    >
+      <Form.Item
+        name={"email"}
+        label="Email"
+        rules={[{ required: true, type: "email" }]}
+      >
+        <Input placeholder="Email Address" />
+      </Form.Item>
+      <Form.Item name={"password"} label="password">
+        <Input.Password />
+      </Form.Item>
+      <Form.Item shouldUpdate={true}>
+        {() => (
+          <Button
+            type="primary"
+            htmlType="submit"
+            disabled={
+              !form.isFieldsTouched(true) ||
+              form.getFieldsError().filter(({ errors }) => errors.length).length
+            }
+          >
+            Sign In
+          </Button>
+        )}
+      </Form.Item>
       {error && <p>{error.message}</p>}
-    </form>
+    </Form>
   );
 };
 
-const SignInGoogle = () => {
-  const { doSignInWithGoogle, userDb } = React.useContext(
-    FirebaseProvider.context
-  );
+const SignInOauthProviders = () => {
+  const {
+    doSignInWithGoogle,
+    doSignInWithFacebook,
+    doSignInWithTwitter,
+    userDb,
+  } = React.useContext(FirebaseProvider.context);
   const history = useHistory();
-  const [error, setError] = React.useState();
+  //const [error, setError] = React.useState();
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const socialAuthUser = await doSignInWithGoogle();
-      if (socialAuthUser) {
+  const oauthProviders = [
+    {
+      doSignInWith: doSignInWithGoogle,
+      successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
           {
             username: socialAuthUser.user.displayName,
             email: socialAuthUser.user.email,
-            //roles: {},
           },
           { merge: true }
         );
-        setError(null);
-        history.push(ROUTES.HOME);
-      }
-    } catch (error) {
-      if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
-        error.message = ERROR_MSG_ACCOUNT_EXISTS;
-      }
-      setError(error);
-    }
-  };
-
-  return (
-    <form onSubmit={onSubmit}>
-      <button type="submit">Sign In with Google</button>
-
-      {error && <p>{error.message}</p>}
-    </form>
-  );
-};
-
-const SignInFacebook = () => {
-  const { doSignInWithFacebook, userDb } = React.useContext(
-    FirebaseProvider.context
-  );
-  const history = useHistory();
-  const [error, setError] = React.useState();
-
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const socialAuthUser = await doSignInWithFacebook();
-      if (socialAuthUser) {
+      },
+      errorAction: (error) => {
+        if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+          error.message = ERROR_MSG_ACCOUNT_EXISTS;
+        }
+        return error;
+      },
+      buttonText: "Sign In with Google",
+    },
+    {
+      doSignInWith: doSignInWithFacebook,
+      successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
           {
             username: socialAuthUser.additionalUserInfo.profile.name,
             email: socialAuthUser.additionalUserInfo.profile.email,
-            //roles: {},
           },
           { merge: true }
         );
-        setError(null);
-        history.push(ROUTES.HOME);
-      }
-    } catch (error) {
-      if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
-        error.message = ERROR_MSG_ACCOUNT_EXISTS;
-      }
-      setError(error);
-    }
-  };
-
-  return (
-    <form onSubmit={onSubmit}>
-      <button type="submit">Sign In with Facebook</button>
-
-      {error && <p>{error.message}</p>}
-    </form>
-  );
-};
-
-const SignInTwitter = () => {
-  const { doSignInWithTwitter, userDb } = React.useContext(
-    FirebaseProvider.context
-  );
-  const history = useHistory();
-  const [error, setError] = React.useState();
-
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const socialAuthUser = await doSignInWithTwitter();
-      if (socialAuthUser) {
+      },
+      errorAction: (error) => {
+        if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+          error.message = ERROR_MSG_ACCOUNT_EXISTS;
+        }
+        return error;
+      },
+      buttonText: "Sign In with Facebook",
+    },
+    {
+      doSignInWith: doSignInWithTwitter,
+      successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
           {
             username: socialAuthUser.additionalUserInfo.profile.name,
             email: socialAuthUser.additionalUserInfo.profile.email,
-            //roles: {},
           },
           { merge: true }
         );
-        setError(null);
-        history.push(ROUTES.HOME);
-      }
-    } catch (error) {
-      if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
-        error.message = ERROR_MSG_ACCOUNT_EXISTS;
-      }
-      setError(error);
-    }
-  };
+      },
+      errorAction: (error) => {
+        if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+          error.message = ERROR_MSG_ACCOUNT_EXISTS;
+        }
+        return error;
+      },
+      buttonText: "Sign In with Twitter",
+    },
+  ];
 
-  return (
-    <form onSubmit={onSubmit}>
-      <button type="submit">Sign In with Twitter</button>
-
-      {error && <p>{error.message}</p>}
-    </form>
-  );
+  return oauthProviders.map((provider, key) => {
+    //let providerError;
+    return (
+      <div key={key}>
+        <Button
+          onClick={async (event) => {
+            event.preventDefault();
+            try {
+              const socialAuthUser = await provider.doSignInWith();
+              if (socialAuthUser) {
+                provider.successAction(socialAuthUser);
+                history.push(ROUTES.HOME);
+              }
+            } catch (error) {
+              const err = provider.errorAction(error);
+              notification.open({
+                message: err.message,
+              });
+            }
+          }}
+        >
+          {provider.buttonText}
+        </Button>
+      </div>
+    );
+  });
 };
 
 export default SignInPage;
 
-export { SignInForm, SignInGoogle, SignInFacebook, SignInTwitter };
+export { SignInForm, SignInOauthProviders };
