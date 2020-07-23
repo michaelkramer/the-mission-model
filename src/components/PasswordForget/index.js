@@ -56,7 +56,7 @@ const PasswordForgetForm = () => {
         >
           <Input placeholder="Email Address" />
         </Form.Item>
-        <Form.Item shouldUpdate={true}>
+        <Form.Item shouldUpdate={true} wrapperCol={{ offset: 8 }}>
           {() => (
             <Button
               type="primary"

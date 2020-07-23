@@ -1,10 +1,14 @@
 import React from "react";
-//import set from "lodash/set";
 import { Link, useHistory } from "react-router-dom";
-
+import { Button, Form, Input, Switch } from "antd";
 import { FirebaseProvider } from "../Firebase";
 import * as ROUTES from "../../constants/routes";
 import * as ROLES from "../../constants/roles";
+
+const layout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
 
 const SignUpPage = () => (
   <div>
@@ -13,14 +17,14 @@ const SignUpPage = () => (
   </div>
 );
 
-// const INITIAL_STATE = {
-//   username: "",
-//   email: "",
-//   passwordOne: "",
-//   passwordTwo: "",
-//   isAdmin: false,
-//   error: null,
-// };
+const formData = {
+  username: "",
+  email: "",
+  passwordOne: "",
+  passwordTwo: null,
+  isAdmin: false,
+  error: null,
+};
 
 const ERROR_CODE_ACCOUNT_EXISTS = "auth/email-already-in-use";
 
@@ -33,11 +37,13 @@ const ERROR_MSG_ACCOUNT_EXISTS = `
 `;
 
 const SignUpForm = () => {
-  const [username, setUsername] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [passwordOne, setPasswordOne] = React.useState("");
-  const [passwordTwo, setPasswordTwo] = React.useState("");
-  const [isAdmin, setIsAdmin] = React.useState(false);
+  const [form] = Form.useForm();
+
+  // const [username, setUsername] = React.useState("");
+  // const [email, setEmail] = React.useState("");
+  // const [passwordOne, setPasswordOne] = React.useState("");
+  // const [passwordTwo, setPasswordTwo] = React.useState("");
+  // const [isAdmin, setIsAdmin] = React.useState(false);
   const [error, setError] = React.useState();
 
   const {
@@ -47,19 +53,18 @@ const SignUpForm = () => {
   } = React.useContext(FirebaseProvider.context);
   const history = useHistory();
 
-  const onFormSubmit = async (event) => {
-    event.preventDefault();
-    const roles = isAdmin ? Object.assign({}, [ROLES.ADMIN]) : {};
+  const onSubmit = async (values) => {
+    const roles = values.isAdmin ? Object.assign({}, [ROLES.ADMIN]) : {};
     try {
       const createAuthUser = await doCreateUserWithEmailAndPassword(
-        email,
-        passwordOne
+        values.email,
+        values.passwordOne
       );
       if (createAuthUser) {
         await userDb(createAuthUser.user.uid).set(
           {
-            username,
-            email,
+            username: values.username,
+            email: values.email,
             roles,
           },
           { merge: true }
@@ -71,7 +76,6 @@ const SignUpForm = () => {
       if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
         error.message = ERROR_MSG_ACCOUNT_EXISTS;
       }
-
       setError(error);
     }
   };
@@ -100,14 +104,74 @@ const SignUpForm = () => {
   //   error,
   // } = stateObj;
 
-  const isInvalid =
-    passwordOne !== passwordTwo ||
-    passwordOne === "" ||
-    email === "" ||
-    username === "";
+  // const isInvalid =
+  //   passwordOne !== passwordTwo ||
+  //   passwordOne === "" ||
+  //   email === "" ||
+  //   username === "";
 
   return (
-    <form onSubmit={onFormSubmit}>
+    <div>
+      <Form
+        {...layout}
+        layout="horizontal"
+        form={form}
+        initialValues={formData}
+        onFinish={onSubmit}
+      >
+        <Form.Item name={"username"} label="Username">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name={"email"}
+          label="Email"
+          rules={[{ required: true, type: "email" }]}
+        >
+          <Input placeholder="Email Address" />
+        </Form.Item>
+        <Form.Item name={"passwordOne"} label="Password" hasFeedback>
+          <Input.Password />
+        </Form.Item>
+        <Form.Item
+          name={"passwordTwo"}
+          label="Confirm Password"
+          hasFeedback
+          dependencies={["passwordOne"]}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator({ value }) {
+                if (!value || getFieldValue("passwordOne") === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(
+                  "The two passwords that you entered do not match!"
+                );
+              },
+            }),
+          ]}
+        >
+          <Input.Password />
+        </Form.Item>
+        <Form.Item name="isAdmin" label="Admin" valuePropName="checked">
+          <Switch />
+        </Form.Item>
+        <Form.Item shouldUpdate={true}>
+          {() => (
+            <Button
+              disabled={
+                !form.isFieldsTouched(true) ||
+                form.getFieldsError().filter(({ errors }) => errors.length)
+                  .length
+              }
+              type="primary"
+              htmlType="submit"
+            >
+              Sign Up
+            </Button>
+          )}
+        </Form.Item>
+      </Form>
+      {/* <form onSubmit={onFormSubmit}>
       <input
         name="username"
         value={username}
@@ -147,16 +211,19 @@ const SignUpForm = () => {
       </label>
       <button disabled={isInvalid} type="submit">
         Sign Up
-      </button>
+      </button> */}
 
       {error && <p>{error.message}</p>}
-    </form>
+    </div>
   );
 };
 
 const SignUpLink = () => (
   <p>
-    Don't have an account? <Link to={ROUTES.SIGN_UP}>Sign Up</Link>
+    Don't have an account?{" "}
+    <Link to={ROUTES.SIGN_UP}>
+      <Button type="link">Sign Up</Button>
+    </Link>
   </p>
 );
 

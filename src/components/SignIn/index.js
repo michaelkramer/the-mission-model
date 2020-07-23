@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { Form, Input, Button, notification } from "antd";
+import { Form, Input, Button, notification, Row, Col } from "antd";
 import { SignUpLink } from "../SignUp";
 import { PasswordForgetLink } from "../PasswordForget";
 import { FirebaseProvider } from "../Firebase";
@@ -16,11 +16,16 @@ const SignInPage = () => (
     <h1>SignIn</h1>
     <SignInForm />
     <SignInOauthProviders />
-    {/* <SignInGoogle />
-    <SignInFacebook />
-    <SignInTwitter /> */}
-    <PasswordForgetLink />
-    <SignUpLink />
+    <Row gutter={[0, 24]}>
+      <Col offset={8}>
+        <PasswordForgetLink />
+      </Col>
+    </Row>
+    <Row gutter={[0, 24]}>
+      <Col offset={8}>
+        <SignUpLink />
+      </Col>
+    </Row>
   </div>
 );
 
@@ -79,7 +84,7 @@ const SignInForm = () => {
       <Form.Item name={"password"} label="password">
         <Input.Password />
       </Form.Item>
-      <Form.Item shouldUpdate={true}>
+      <Form.Item shouldUpdate={true} wrapperCol={{ offset: 8 }}>
         {() => (
           <Button
             type="primary"
@@ -171,27 +176,29 @@ const SignInOauthProviders = () => {
   return oauthProviders.map((provider, key) => {
     //let providerError;
     return (
-      <div key={key}>
-        <Button
-          onClick={async (event) => {
-            event.preventDefault();
-            try {
-              const socialAuthUser = await provider.doSignInWith();
-              if (socialAuthUser) {
-                provider.successAction(socialAuthUser);
-                history.push(ROUTES.HOME);
+      <Row key={key} gutter={[0, 24]}>
+        <Col offset={8}>
+          <Button
+            onClick={async (event) => {
+              event.preventDefault();
+              try {
+                const socialAuthUser = await provider.doSignInWith();
+                if (socialAuthUser) {
+                  provider.successAction(socialAuthUser);
+                  history.push(ROUTES.HOME);
+                }
+              } catch (error) {
+                const err = provider.errorAction(error);
+                notification.open({
+                  message: err.message,
+                });
               }
-            } catch (error) {
-              const err = provider.errorAction(error);
-              notification.open({
-                message: err.message,
-              });
-            }
-          }}
-        >
-          {provider.buttonText}
-        </Button>
-      </div>
+            }}
+          >
+            {provider.buttonText}
+          </Button>
+        </Col>
+      </Row>
     );
   });
 };

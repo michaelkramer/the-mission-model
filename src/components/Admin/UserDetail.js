@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FirebaseProvider } from "../Firebase";
 import { createUseStyles, useTheme } from "react-jss";
 import { Form, Input, Button, Row, Col, Switch, notification } from "antd";
-
-import { SIGN_IN_METHODS } from "../../constants";
+import { FirebaseProvider } from "../Firebase";
 import * as ROLES from "../../constants/roles";
+import SocialMedia from "../SocialMedia";
+
+const rowStyle = { gutter: [0, 24] };
 
 const UserDetail = (props) => {
   const theme = useTheme();
@@ -18,24 +19,22 @@ const UserDetail = (props) => {
   const [user, setUser] = useState();
 
   useEffect(() => {
-    let isSubscribed = true;
-    isSubscribed && setLoading(true);
+    setLoading(true);
     userDb(props.match.params.id).onSnapshot(async (snapshot) => {
       const activeSignInMethods = await firebaseAuth.fetchSignInMethodsForEmail(
         snapshot.data().email
       );
-      isSubscribed &&
-        setUser({
-          uid: snapshot.id,
-          ...snapshot.data(),
-          signInMethods: activeSignInMethods,
-        });
-      isSubscribed && setLoading(false);
+
+      setUser({
+        uid: snapshot.id,
+        ...snapshot.data(),
+        signInMethods: activeSignInMethods,
+      });
+      setLoading(false);
     });
-    return () => (isSubscribed = false);
+    return () => {};
   }, [userDb, props.match.params.id]);
 
-  //useEffect(() => setFormData(values), [values]);
   useEffect(() => form.resetFields(), [user]);
 
   const onSendPasswordResetEmail = () => {
@@ -96,8 +95,7 @@ const UserDetail = (props) => {
         {user && (
           <div>
             <Form.Item name={"uid"} label="ID">
-              <Input type="hidden" />
-              {user.uid}
+              <span>{user.uid}</span>
             </Form.Item>
             <Form.Item name={"email"} label="Email">
               <Input />
@@ -105,7 +103,7 @@ const UserDetail = (props) => {
             <Form.Item name="username" label="Username">
               <Input />
             </Form.Item>
-            <Row>
+            <Row {...rowStyle}>
               <Col span={8}>
                 <div className={classes.center}>
                   <Switch
@@ -122,13 +120,21 @@ const UserDetail = (props) => {
                 </Button>
               </Col>
             </Row>
-            <div>
-              {user.signInMethods &&
-                user.signInMethods.map((socialMedia, idx) => {
-                  return <div key={idx}>{socialMedia}</div>;
-                })}
-            </div>
-            <Row>
+            <Form.Item label="Oath Providers" align="middle">
+              <div>
+                {user.signInMethods &&
+                  user.signInMethods
+                    .filter((socialMedia) => socialMedia !== "password")
+                    .map((socialMedia, idx) => {
+                      return (
+                        <div className={classes.vcenter} type="text" key={idx}>
+                          {SocialMedia[socialMedia].icon}
+                        </div>
+                      );
+                    })}
+              </div>
+            </Form.Item>
+            <Row {...rowStyle}>
               <Col offset={8}>
                 <Button type="primary" htmlType="submit">
                   Submit
@@ -149,6 +155,14 @@ const useStyles = createUseStyles((_theme) => ({
     alignItems: "center",
     height: "32px",
     margin: "0 8px 0 2px",
+  },
+  vcenter: {
+    width: "32px",
+    height: "32px",
+    padding: "4px 0",
+    fontSize: "16px",
+    borderRadius: "2px",
+    verticalAlign: "-0.5px",
   },
   userDetail: {},
 }));

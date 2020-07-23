@@ -67,7 +67,7 @@ const PasswordChangeForm = () => {
         >
           <Input.Password />
         </Form.Item>
-        <Form.Item shouldUpdate={true}>
+        <Form.Item shouldUpdate={true} wrapperCol={{ offset: 8 }}>
           {() => (
             <Button
               disabled={
