@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Menu } from "antd";
 
 import { FirebaseProvider } from "../Firebase";
@@ -8,7 +8,7 @@ import * as ROUTES from "../../constants/routes";
 
 const Navigation = () => {
   const { authUser, doSignOut } = React.useContext(FirebaseProvider.context);
-  const history = useHistory();
+
   const authNav = [
     { url: ROUTES.LANDING, title: "Landing", icon: "" },
     { url: ROUTES.HOME, title: "Home" },
@@ -16,7 +16,7 @@ const Navigation = () => {
     { url: ROUTES.ADMIN, title: "Admin" },
     {
       title: "Sign Out",
-      onClick: () => doSignOut().then(() => history.push(ROUTES.SIGN_IN)),
+      onClick: () => doSignOut().then(() => (window.location = ROUTES.SIGN_IN)),
     },
   ];
 

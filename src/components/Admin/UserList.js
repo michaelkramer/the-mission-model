@@ -11,18 +11,16 @@ const UserList = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    let isSubscribed = true;
-
-    isSubscribed && setLoading(true);
+    setLoading(true);
     usersDb().onSnapshot((snapshot) => {
       let users = [];
 
       snapshot.forEach((doc) => users.push({ ...doc.data(), uid: doc.id }));
-      isSubscribed && setUsers(users);
-      isSubscribed && setLoading(false);
+      setUsers(users);
+      setLoading(false);
     });
 
-    return () => (isSubscribed = false);
+    return () => {};
   }, [usersDb]);
 
   const columns = [
@@ -58,31 +56,6 @@ const UserList = () => {
       <h2>Users</h2>
       {loading && <div>Loading ...</div>}
       <Table dataSource={users} columns={columns} rowKey="uid" />;
-      <ul>
-        {users.map((user) => (
-          <li key={user.uid}>
-            <span>
-              <strong>ID:</strong> {user.uid}
-            </span>
-            <span>
-              <strong>E-Mail:</strong> {user.email}
-            </span>
-            <span>
-              <strong>Username:</strong> {user.username}
-            </span>
-            <span>
-              <Link
-                to={{
-                  pathname: `${ROUTES.ADMIN}/${user.uid}`,
-                  state: { user },
-                }}
-              >
-                Details
-              </Link>
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 };

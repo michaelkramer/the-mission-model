@@ -1,45 +1,26 @@
 import React, { useEffect } from "react";
-import { Button, notification } from "antd";
+import { Button, Form, Input, Row, Col } from "antd";
 import { AuthUserProvider, withEmailVerification } from "../Session";
 import { FirebaseProvider } from "../Firebase";
 import { PasswordForgetForm } from "../PasswordForget";
-import PasswordChangeForm from "../PasswordChange";
 import { useHistory } from "react-router-dom";
 import * as ROUTES from "../../constants/routes";
 import { SIGN_IN_METHODS } from "../../constants";
 
+const layout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
+
 const condition = (authUser) => !!authUser;
 
 const AccountPage = () => {
-  const { authUser } = React.useContext(FirebaseProvider.context);
-  const { authorization } = React.useContext(AuthUserProvider.context);
-  const history = useHistory();
-  if (!authorization(condition)) {
-    history.push(ROUTES.SIGN_IN);
-    return null;
-  }
-
-  return (
-    <React.Fragment>
-      {authUser ? (
-        <div>
-          <h1>Account: {authUser.email}</h1>
-          <PasswordForgetForm />
-          <PasswordChangeForm />
-          <LoginManagement authUser={authUser} />
-        </div>
-      ) : (
-        <div>Not Logged in</div>
-      )}
-    </React.Fragment>
-  );
-};
-
-const LoginManagement = (authUser) => {
-  const { firebaseAuth, firebaseApp } = React.useContext(
+  const { authUser, firebaseAuth, firebaseApp } = React.useContext(
     FirebaseProvider.context
   );
-  const [activeSignInMethods, setActiveSignInMethods] = React.useState();
+  const { authorization } = React.useContext(AuthUserProvider.context);
+  const history = useHistory();
+  const [activeSignInMethods, setActiveSignInMethods] = React.useState(null);
   const [error, setError] = React.useState();
 
   const fetchSignInMethods = async () => {
@@ -82,47 +63,60 @@ const LoginManagement = (authUser) => {
   };
 
   useEffect(() => {
-    let isSubscribed = true;
-    isSubscribed && fetchSignInMethods();
-    return () => (isSubscribed = false);
-  });
+    fetchSignInMethods();
+    return () => {};
+  }, [authUser]);
+
+  if (!authorization(condition)) {
+    history.push(ROUTES.SIGN_IN);
+    return null;
+  }
 
   return (
-    <div>
-      Sign In Methods:
-      <ul>
-        {SIGN_IN_METHODS.map((signInMethod) => {
-          const onlyOneLeft =
-            activeSignInMethods && activeSignInMethods.length === 1;
-          const isEnabled =
-            activeSignInMethods &&
-            activeSignInMethods.includes(signInMethod.id);
-
-          return (
-            <li key={signInMethod.id}>
-              {signInMethod.id === "password" ? (
-                <DefaultLoginToggle
-                  onlyOneLeft={onlyOneLeft}
-                  isEnabled={isEnabled}
-                  signInMethod={signInMethod}
-                  onLink={onDefaultLoginLink}
-                  onUnlink={onUnlink}
-                />
-              ) : (
-                <SocialLoginToggle
-                  onlyOneLeft={onlyOneLeft}
-                  isEnabled={isEnabled}
-                  signInMethod={signInMethod}
-                  onLink={onSocialLoginLink}
-                  onUnlink={onUnlink}
-                />
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {error && error.message}
-    </div>
+    <React.Fragment>
+      {authUser ? (
+        <div>
+          <h1>Account: {authUser.email}</h1>
+          <PasswordForgetForm />
+          <div>
+            <h3>Sign In Methods:</h3>
+            <div>
+              {SIGN_IN_METHODS.map((signInMethod) => {
+                const onlyOneLeft =
+                  activeSignInMethods && activeSignInMethods.length === 1;
+                const isEnabled =
+                  activeSignInMethods &&
+                  activeSignInMethods.includes(signInMethod.id);
+                return (
+                  <div key={signInMethod.id}>
+                    {signInMethod.id === "password" ? (
+                      <DefaultLoginToggle
+                        onlyOneLeft={onlyOneLeft}
+                        isEnabled={isEnabled}
+                        signInMethod={signInMethod}
+                        onLink={onDefaultLoginLink}
+                        onUnlink={onUnlink}
+                      />
+                    ) : (
+                      <SocialLoginToggle
+                        onlyOneLeft={onlyOneLeft}
+                        isEnabled={isEnabled}
+                        signInMethod={signInMethod}
+                        onLink={onSocialLoginLink}
+                        onUnlink={onUnlink}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {error && error.message}
+          </div>
+        </div>
+      ) : (
+        <div>Not Logged in</div>
+      )}
+    </React.Fragment>
   );
 };
 
@@ -132,20 +126,25 @@ const SocialLoginToggle = ({
   signInMethod,
   onLink,
   onUnlink,
-}) =>
-  isEnabled ? (
-    <Button
-      type="button"
-      onClick={() => onUnlink(signInMethod.id)}
-      disabled={onlyOneLeft}
-    >
-      Deactivate {signInMethod.id}
-    </Button>
-  ) : (
-    <Button type="button" onClick={() => onLink(signInMethod.provider)}>
-      Link {signInMethod.id}
-    </Button>
-  );
+}) => (
+  <Row gutter={[0, 24]}>
+    <Col offset={8}>
+      {isEnabled ? (
+        <Button
+          type="button"
+          onClick={() => onUnlink(signInMethod.id)}
+          disabled={onlyOneLeft}
+        >
+          Deactivate {signInMethod.id}
+        </Button>
+      ) : (
+        <Button type="button" onClick={() => onLink(signInMethod.provider)}>
+          Link {signInMethod.id}
+        </Button>
+      )}
+    </Col>
+  </Row>
+);
 
 const DefaultLoginToggle = ({
   onlyOneLeft,
@@ -154,6 +153,7 @@ const DefaultLoginToggle = ({
   onLink,
   onUnlink,
 }) => {
+  const [form] = Form.useForm();
   const [passwordOne, setPasswordOne] = React.useState("");
   const [passwordTwo, setPasswordTwo] = React.useState("");
 
@@ -168,34 +168,59 @@ const DefaultLoginToggle = ({
   const isInvalid = passwordOne !== passwordTwo || passwordOne === "";
 
   return isEnabled ? (
-    <button
+    <Button
       type="button"
       onClick={() => onUnlink(signInMethod.id)}
       disabled={onlyOneLeft}
     >
       Deactivate {signInMethod.id}
-    </button>
+    </Button>
   ) : (
-    <form onSubmit={onSubmit}>
-      <input
-        name="passwordOne"
-        value={passwordOne}
-        onChange={(e) => setPasswordOne(e.target.value)}
-        type="password"
-        placeholder="New Password"
-      />
-      <input
-        name="passwordTwo"
-        value={passwordTwo}
-        onChange={(e) => setPasswordTwo(e.target.value)}
-        type="password"
-        placeholder="Confirm New Password"
-      />
-
-      <button disabled={isInvalid} type="submit">
-        Link {signInMethod.id}
-      </button>
-    </form>
+    <Form
+      {...layout}
+      layout="horizontal"
+      form={form}
+      initialValues={{ passwordOne: "", passwordTwo: "" }}
+      onFinish={onSubmit}
+    >
+      <Form.Item name={"passwordOne"} label="New Password" hasFeedback>
+        <Input.Password />
+      </Form.Item>
+      <Form.Item
+        name={"passwordTwo"}
+        label="Confirm New Password"
+        hasFeedback
+        dependencies={["passwordOne"]}
+        rules={[
+          ({ getFieldValue }) => ({
+            validator({ value }) {
+              if (!value || getFieldValue("passwordOne") === value) {
+                return Promise.resolve();
+              }
+              return Promise.reject(
+                "The two passwords that you entered do not match!"
+              );
+            },
+          }),
+        ]}
+      >
+        <Input.Password />
+      </Form.Item>
+      <Form.Item shouldUpdate={true} wrapperCol={{ offset: 8 }}>
+        {() => (
+          <Button
+            disabled={
+              !form.isFieldsTouched(true) ||
+              form.getFieldsError().filter(({ errors }) => errors.length).length
+            }
+            type="primary"
+            htmlType="submit"
+          >
+            Link {signInMethod.id}
+          </Button>
+        )}
+      </Form.Item>
+    </Form>
   );
 };
 

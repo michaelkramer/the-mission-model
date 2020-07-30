@@ -1,5 +1,5 @@
 import React from "react";
-
+import { Button } from "antd";
 //import AuthUserContext from "./AuthUserContext";
 import { FirebaseProvider } from "../Firebase"; //withFirebase
 
@@ -44,13 +44,13 @@ const withEmailVerification = (Component) => {
             </p>
           )}
 
-          <button
-            type="button"
+          <Button
+            type="primary"
             onClick={onSendEmailVerification}
             disabled={isSent}
           >
             Send confirmation E-Mail
-          </button>
+          </Button>
         </div>
       );
     }
