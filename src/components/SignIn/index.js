@@ -4,6 +4,7 @@ import { Form, Input, Button, notification, Row, Col } from "antd";
 import { SignUpLink } from "../SignUp";
 import { PasswordForgetLink } from "../PasswordForget";
 import { FirebaseProvider } from "../Firebase";
+import { SIGN_IN_METHODS } from "../../constants";
 import * as ROUTES from "../../constants/routes";
 
 const layout = {
@@ -113,8 +114,14 @@ const SignInOauthProviders = () => {
   const history = useHistory();
   //const [error, setError] = React.useState();
 
-  const oauthProviders = [
-    {
+  const oauthProviders = [];
+
+  if (
+    SIGN_IN_METHODS.find(
+      (provider) => provider.id === "google.com" && provider.enabled
+    )
+  ) {
+    oauthProviders.push({
       doSignInWith: doSignInWithGoogle,
       successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
@@ -132,8 +139,14 @@ const SignInOauthProviders = () => {
         return error;
       },
       buttonText: "Sign In with Google",
-    },
-    {
+    });
+  }
+  if (
+    SIGN_IN_METHODS.find(
+      (provider) => provider.id === "facebook.com" && provider.enabled
+    )
+  ) {
+    oauthProviders.push({
       doSignInWith: doSignInWithFacebook,
       successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
@@ -151,8 +164,14 @@ const SignInOauthProviders = () => {
         return error;
       },
       buttonText: "Sign In with Facebook",
-    },
-    {
+    });
+  }
+  if (
+    SIGN_IN_METHODS.find(
+      (provider) => provider.id === "twitter.com" && provider.enabled
+    )
+  ) {
+    oauthProviders.push({
       doSignInWith: doSignInWithTwitter,
       successAction: (socialAuthUser) => {
         userDb(socialAuthUser.user.uid).set(
@@ -170,8 +189,8 @@ const SignInOauthProviders = () => {
         return error;
       },
       buttonText: "Sign In with Twitter",
-    },
-  ];
+    });
+  }
 
   return oauthProviders.map((provider, key) => {
     //let providerError;

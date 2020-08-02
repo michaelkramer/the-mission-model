@@ -98,13 +98,15 @@ const AccountPage = () => {
                         onUnlink={onUnlink}
                       />
                     ) : (
-                      <SocialLoginToggle
-                        onlyOneLeft={onlyOneLeft}
-                        isEnabled={isEnabled}
-                        signInMethod={signInMethod}
-                        onLink={onSocialLoginLink}
-                        onUnlink={onUnlink}
-                      />
+                      signInMethod.enabled && (
+                        <SocialLoginToggle
+                          onlyOneLeft={onlyOneLeft}
+                          isEnabled={isEnabled}
+                          signInMethod={signInMethod}
+                          onLink={onSocialLoginLink}
+                          onUnlink={onUnlink}
+                        />
+                      )
                     )}
                   </div>
                 );
